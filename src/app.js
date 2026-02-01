@@ -3,6 +3,8 @@ import cookieParser from "cookie-parser";
 import authRoutes from "./routes/authRoutes.js";
 import { authenticate } from "./middleware/authmiddleware.js";
 import adminRoutes from "./routes/adminRoutes.js";
+import resourceRoutes from "./routes/resourceRoutes.js";
+import bookingRoutes from "./routes/bookingRoutes.js";
 
 const app = express();
 
@@ -14,6 +16,8 @@ app.use(cookieParser());
 // routes
 app.use("/api/auth", authRoutes);
 app.use("/api/admin", adminRoutes);
+app.use("/api/resources", resourceRoutes);
+app.use("/api/bookings", bookingRoutes);
 
 // Health check route
 app.get("/api/health", (req, res) => {
