@@ -2,6 +2,7 @@ import express from "express";
 import cookieParser from "cookie-parser";
 import authRoutes from "./routes/authRoutes.js";
 import { authenticate } from "./middleware/authmiddleware.js";
+import adminRoutes from "./routes/adminRoutes.js";
 
 const app = express();
 
@@ -12,6 +13,7 @@ app.use(cookieParser());
 
 // routes
 app.use("/api/auth", authRoutes);
+app.use("/api/admin", adminRoutes);
 
 // Health check route
 app.get("/api/health", (req, res) => {
