@@ -3,13 +3,12 @@ import pool from "../config/db.js";
 export const createBooking = async (req, res) => {
   try {
     const { resource_id, start_time, end_time } = req.body;
-    const userId = req.user.userId;
+    const { userId, role } = req.user;
 
     if (!resource_id || !start_time || !end_time) {
       return res.status(400).json({ message: "Missing fields" });
     }
 
-    // Check resource
     const resourceResult = await pool.query(
       "SELECT * FROM resources WHERE resource_id = $1",
       [resource_id],
@@ -25,7 +24,7 @@ export const createBooking = async (req, res) => {
       return res.status(400).json({ message: "Resource unavailable" });
     }
 
-    // Check time conflict
+    // Conflict check
     const conflict = await pool.query(
       `SELECT booking_id FROM bookings
        WHERE resource_id = $1
@@ -38,19 +37,11 @@ export const createBooking = async (req, res) => {
       return res.status(409).json({ message: "Time slot already booked" });
     }
 
-    const role = req.user.role;
+    // Faculty priority logic
+    let status = "confirmed";
 
-    // Determine booking status
-    let status;
-
-    if (resource.approval_required) {
-      if (role === "faculty") {
-        status = "confirmed"; // priority
-      } else {
-        status = "pending";
-      }
-    } else {
-      status = "confirmed";
+    if (resource.approval_required && role === "student") {
+      status = "pending";
     }
 
     const booking = await pool.query(
