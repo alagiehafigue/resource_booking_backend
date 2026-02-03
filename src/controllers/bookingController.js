@@ -1,4 +1,5 @@
 import pool from "../config/db.js";
+import { createNotification } from "../utils/notification.js";
 
 export const createBooking = async (req, res) => {
   try {
@@ -53,6 +54,68 @@ export const createBooking = async (req, res) => {
     );
 
     res.status(201).json(booking.rows[0]);
+
+    await createNotification(
+      userId,
+      `Your booking for resource ${resource.resource_name} is ${status}`,
+    );
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Server error" });
+  }
+};
+
+export const getMyBookings = async (req, res) => {
+  try {
+    const userId = req.user.userId;
+
+    const result = await pool.query(
+      `SELECT bookings.*, resources.resource_name
+       FROM bookings
+       JOIN resources ON bookings.resource_id = resources.resource_id
+       WHERE bookings.user_id = $1
+       ORDER BY bookings.created_at DESC`,
+      [userId],
+    );
+
+    res.json(result.rows);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Server error" });
+  }
+};
+
+export const cancelBooking = async (req, res) => {
+  try {
+    const { bookingId } = req.params;
+    const { userId, role } = req.user;
+
+    const bookingResult = await pool.query(
+      "SELECT * FROM bookings WHERE booking_id = $1",
+      [bookingId],
+    );
+
+    if (bookingResult.rows.length === 0) {
+      return res.status(404).json({ message: "Booking not found" });
+    }
+
+    const booking = bookingResult.rows[0];
+
+    if (role !== "admin" && booking.user_id !== userId) {
+      return res.status(403).json({ message: "Access denied" });
+    }
+
+    await pool.query(
+      "UPDATE bookings SET status = 'cancelled' WHERE booking_id = $1",
+      [bookingId],
+    );
+
+    await createNotification(
+      booking.user_id,
+      "Your booking has been cancelled",
+    );
+
+    res.json({ message: "Booking cancelled successfully" });
   } catch (error) {
     console.error(error);
     res.status(500).json({ message: "Server error" });

@@ -41,6 +41,12 @@ export const updateBookingStatus = async (req, res) => {
     }
 
     res.json({ message: "Booking updated successfully" });
+    const booking = result.rows[0];
+
+    await createNotification(
+      booking.user_id,
+      `Your booking request has been ${status}`,
+    );
   } catch (error) {
     console.error(error);
     res.status(500).json({ message: "Server error" });

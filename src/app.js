@@ -7,6 +7,7 @@ import adminRoutes from "./routes/adminRoutes.js";
 import resourceRoutes from "./routes/resourceRoutes.js";
 import bookingRoutes from "./routes/bookingRoutes.js";
 import approvalRoutes from "./routes/approvalRoutes.js";
+import notificationRoutes from "./routes/notificationRoutes.js";
 
 const app = express();
 
@@ -21,6 +22,7 @@ app.use("/api/admin", adminRoutes);
 app.use("/api/resources", resourceRoutes);
 app.use("/api/bookings", bookingRoutes);
 app.use("/api/approvals", approvalRoutes);
+app.use("/api/notifications", notificationRoutes);
 
 // Health check route
 app.get("/api/health", (req, res) => {
