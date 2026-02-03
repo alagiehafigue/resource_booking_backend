@@ -2,6 +2,12 @@ import jwt from "jsonwebtoken";
 import bcrypt from "bcrypt";
 import pool from "../config/db.js";
 
+const generateAccessToken = (payload) =>
+  jwt.sign(payload, process.env.JWT_SECRET, { expiresIn: "1m" });
+
+const generateRefreshToken = (payload) =>
+  jwt.sign(payload, process.env.JWT_REFRESH_SECRET, { expiresIn: "7d" });
+
 export const registerUser = async (req, res) => {
   try {
     const { name, email, password } = req.body || {};
@@ -25,6 +31,12 @@ export const registerUser = async (req, res) => {
     const roleResult = await pool.query(
       "SELECT role_id FROM roles WHERE role_name = 'student'",
     );
+
+    if (roleResult.rows.length === 0) {
+      return res.status(500).json({
+        message: "Default role 'student' not found. Contact administrator.",
+      });
+    }
 
     const roleId = roleResult.rows[0].role_id;
 
@@ -81,20 +93,33 @@ export const loginUser = async (req, res) => {
     }
 
     // Create JWT
-    const token = jwt.sign(
-      { userId: user.user_id, role: user.role_name },
-      process.env.JWT_SECRET,
-      { expiresIn: "1d" },
+
+    const payload = { userId: user.user_id, role: user.role_name };
+
+    const accessToken = generateAccessToken(payload);
+    const refreshToken = generateRefreshToken(payload);
+
+    // Store refresh token in DB
+    await pool.query(
+      `INSERT INTO refresh_tokens (user_id, token, expires_at)
+   VALUES ($1, $2, NOW() + INTERVAL '7 days')`,
+      [user.user_id, refreshToken],
     );
 
-    // Send token as HTTP-only cookie
-    res.cookie("token", token, {
+    // Cookies
+    res.cookie("accessToken", accessToken, {
       httpOnly: true,
-      secure: false, // true in production (HTTPS)
       sameSite: "strict",
-      maxAge: 24 * 60 * 60 * 1000,
+      secure: false, // true in production
+      maxAge: 15 * 60 * 1000,
     });
 
+    res.cookie("refreshToken", refreshToken, {
+      httpOnly: true,
+      sameSite: "strict",
+      secure: false,
+      maxAge: 7 * 24 * 60 * 60 * 1000,
+    });
     res.status(200).json({ message: "Login successful" });
   } catch (error) {
     console.error(error);
@@ -102,7 +127,59 @@ export const loginUser = async (req, res) => {
   }
 };
 
-export const logoutUser = (req, res) => {
-  res.clearCookie("token");
-  res.status(200).json({ message: "Logged out successfully" });
+export const logoutUser = async (req, res) => {
+  const refreshToken = req.cookies.refreshToken;
+
+  if (refreshToken) {
+    await pool.query("DELETE FROM refresh_tokens WHERE token = $1", [
+      refreshToken,
+    ]);
+  }
+
+  res.clearCookie("accessToken");
+  res.clearCookie("refreshToken");
+
+  res.json({ message: "Logged out successfully" });
+};
+
+export const refreshAccessToken = async (req, res) => {
+  try {
+    const refreshToken = req.cookies.refreshToken;
+
+    if (!refreshToken) {
+      return res.status(401).json({ message: "No refresh token" });
+    }
+
+    // Verify refresh token
+    const decoded = jwt.verify(refreshToken, process.env.JWT_REFRESH_SECRET);
+
+    // Check token in DB
+    const result = await pool.query(
+      "SELECT * FROM refresh_tokens WHERE token = $1",
+      [refreshToken],
+    );
+
+    if (result.rows.length === 0) {
+      return res.status(403).json({ message: "Invalid refresh token" });
+    }
+
+    const payload = { userId: decoded.userId, role: decoded.role };
+
+    const newAccessToken = jwt.sign(payload, process.env.JWT_SECRET, {
+      expiresIn: "15m",
+    });
+
+    res.cookie("accessToken", newAccessToken, {
+      httpOnly: true,
+      sameSite: "strict",
+      secure: false,
+      maxAge: 15 * 60 * 1000,
+    });
+
+    res.json({ message: "Access token refreshed" });
+  } catch (error) {
+    return res
+      .status(403)
+      .json({ message: "Refresh token expired or invalid" });
+  }
 };

@@ -8,6 +8,7 @@ import resourceRoutes from "./routes/resourceRoutes.js";
 import bookingRoutes from "./routes/bookingRoutes.js";
 import approvalRoutes from "./routes/approvalRoutes.js";
 import notificationRoutes from "./routes/notificationRoutes.js";
+import { errorHandler } from "./middleware/errormiddleware.js";
 
 const app = express();
 
@@ -29,11 +30,14 @@ app.get("/api/health", (req, res) => {
   res.status(200).json({ status: "OK", message: "Backend is running" });
 });
 
-app.get("/api/protected", authenticate, (req, res) => {
-  res.json({
-    message: "Access granted",
-    user: req.user,
-  });
+// To catch generic errors
+app.use(errorHandler);
+
+// To catch for all Not Found Page
+app.use((req, res, next) => {
+  const error = new Error(`Not Found - ${req.path}`);
+  res.status(404);
+  next(error); //
 });
 
 export default app;
