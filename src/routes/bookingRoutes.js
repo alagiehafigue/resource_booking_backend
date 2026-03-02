@@ -4,13 +4,20 @@ import {
   createBooking,
   getMyBookings,
   cancelBooking,
+  getAllBookings,
+  approveBooking,
+  rejectBooking,
 } from "../controllers/bookingController.js";
 
 const router = express.Router();
 
 router.post("/", authenticate, createBooking);
-router.post("/", authenticate, createBooking);
-router.get("/my", authenticate, getMyBookings);
-router.put("/cancel/:bookingId", authenticate, cancelBooking);
+router.get("/my-bookings", authenticate, getMyBookings);
+router.get("/", authenticate, getAllBookings);
+
+router.put("/:bookingId/approve", authenticate, approveBooking);
+router.put("/:bookingId/reject", authenticate, rejectBooking);
+
+router.delete("/:bookingId", authenticate, cancelBooking);
 
 export default router;
