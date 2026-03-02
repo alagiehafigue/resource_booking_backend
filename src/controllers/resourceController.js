@@ -1,6 +1,62 @@
 import pool from "../config/db.js";
 
-// Get all resources for home page
+//  Create resource admin only
+
+export const createResource = async (req, res) => {
+  try {
+    const { role } = req.user;
+
+    if (role !== "admin") {
+      return res.status(403).json({ message: "Access denied" });
+    }
+
+    const {
+      resource_name,
+      resource_type,
+      availability_status,
+      approval_required,
+      image_url,
+      description,
+      location,
+      capacity,
+    } = req.body;
+
+    if (!resource_name || !resource_type || !location || !capacity) {
+      return res.status(400).json({
+        message:
+          "resource_name, resource_type, location and capacity are required",
+      });
+    }
+
+    const result = await pool.query(
+      `INSERT INTO resources
+       (resource_name, resource_type, availability_status, approval_required,
+        image_url, description, location, capacity)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+       RETURNING *`,
+      [
+        resource_name,
+        resource_type,
+        availability_status ?? true,
+        approval_required ?? false,
+        image_url || null,
+        description || null,
+        location,
+        capacity,
+      ],
+    );
+
+    res.status(201).json({
+      message: "Resource created successfully",
+      resource: result.rows[0],
+    });
+  } catch (error) {
+    console.error("Create Resource Error:", error);
+    res.status(500).json({ message: "Server error" });
+  }
+};
+
+// Get all resources
 export const getAllResources = async (req, res) => {
   try {
     const result = await pool.query(
@@ -24,7 +80,7 @@ export const getAllResources = async (req, res) => {
   }
 };
 
-//  Get a single resource
+// Get a single resource
 export const getResourceById = async (req, res) => {
   try {
     const { id } = req.params;
@@ -55,7 +111,7 @@ export const getResourceById = async (req, res) => {
   }
 };
 
-// delete resource admin only
+// Delete resource by admin only
 export const deleteResource = async (req, res) => {
   try {
     const { id } = req.params;
@@ -65,7 +121,6 @@ export const deleteResource = async (req, res) => {
       return res.status(403).json({ message: "Access denied" });
     }
 
-    // Check resource exists
     const resourceCheck = await pool.query(
       "SELECT * FROM resources WHERE resource_id = $1",
       [id],
@@ -75,7 +130,6 @@ export const deleteResource = async (req, res) => {
       return res.status(404).json({ message: "Resource not found" });
     }
 
-    // Check for active bookings
     const activeBookings = await pool.query(
       `SELECT booking_id FROM bookings
        WHERE resource_id = $1
@@ -90,7 +144,6 @@ export const deleteResource = async (req, res) => {
       });
     }
 
-    // Safe to delete
     await pool.query("DELETE FROM resources WHERE resource_id = $1", [id]);
 
     res.json({ message: "Resource deleted successfully" });
