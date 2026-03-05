@@ -74,9 +74,10 @@ export const loginUser = async (req, res) => {
     // Get user + role
     const result = await pool.query(
       `SELECT users.user_id, users.password, roles.role_name
-       FROM users
-       JOIN roles ON users.role_id = roles.role_id
-       WHERE users.email = $1`,
+   FROM users
+   JOIN roles ON users.role_id = roles.role_id
+   WHERE users.email = $1
+   AND users.is_deleted = FALSE`,
       [email],
     );
 
@@ -185,28 +186,30 @@ export const refreshAccessToken = async (req, res) => {
 };
 
 // Delete account for user
-
 export const deleteAccount = async (req, res) => {
   try {
     const userId = req.user.userId;
 
-    // Delete refresh tokens
-    await pool.query("DELETE FROM refresh_tokens WHERE user_id = $1", [userId]);
+    // Soft delete user
+    await pool.query(
+      `UPDATE users
+       SET is_deleted = TRUE
+       WHERE user_id = $1`,
+      [userId],
+    );
 
-    // Delete notifications
-    await pool.query("DELETE FROM notifications WHERE user_id = $1", [userId]);
-
-    // Delete bookings
-    await pool.query("DELETE FROM bookings WHERE user_id = $1", [userId]);
-
-    // Delete user
-    await pool.query("DELETE FROM users WHERE user_id = $1", [userId]);
+    // Remove refresh tokens
+    await pool.query(
+      `DELETE FROM refresh_tokens
+       WHERE user_id = $1`,
+      [userId],
+    );
 
     // Clear cookies
     res.clearCookie("accessToken");
     res.clearCookie("refreshToken");
 
-    res.json({
+    res.status(200).json({
       message: "Account deleted successfully",
     });
   } catch (error) {
