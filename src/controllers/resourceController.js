@@ -18,22 +18,28 @@ export const createResource = async (req, res) => {
       image_url,
       description,
       location,
+      location_name,
       capacity,
     } = req.body;
 
-    if (!resource_name || !resource_type || !location || !capacity) {
+    if (
+      !resource_name ||
+      !resource_type ||
+      !location ||
+      !location_name ||
+      !capacity
+    ) {
       return res.status(400).json({
         message:
-          "resource_name, resource_type, location and capacity are required",
+          "resource_name, resource_type, location_name, location and capacity are required",
       });
     }
-
     const result = await pool.query(
       `INSERT INTO resources
-       (resource_name, resource_type, availability_status, approval_required,
-        image_url, description, location, capacity)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
-       RETURNING *`,
+  (resource_name, resource_type, availability_status, approval_required,
+   image_url, description, location, location_name, capacity)
+  VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9)
+  RETURNING *`,
       [
         resource_name,
         resource_type,
@@ -42,6 +48,7 @@ export const createResource = async (req, res) => {
         image_url || null,
         description || null,
         location,
+        location_name,
         capacity,
       ],
     );
@@ -65,6 +72,7 @@ export const getAllResources = async (req, res) => {
           resource_name,
           image_url,
           description,
+          location_name,
           location,
           capacity,
           availability_status,
@@ -91,6 +99,7 @@ export const getResourceById = async (req, res) => {
           resource_name,
           image_url,
           description,
+          location_name,
           location,
           capacity,
           availability_status,
