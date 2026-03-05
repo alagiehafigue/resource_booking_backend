@@ -183,3 +183,34 @@ export const refreshAccessToken = async (req, res) => {
       .json({ message: "Refresh token expired or invalid" });
   }
 };
+
+// Delete account for user
+
+export const deleteAccount = async (req, res) => {
+  try {
+    const userId = req.user.userId;
+
+    // Delete refresh tokens
+    await pool.query("DELETE FROM refresh_tokens WHERE user_id = $1", [userId]);
+
+    // Delete notifications
+    await pool.query("DELETE FROM notifications WHERE user_id = $1", [userId]);
+
+    // Delete bookings
+    await pool.query("DELETE FROM bookings WHERE user_id = $1", [userId]);
+
+    // Delete user
+    await pool.query("DELETE FROM users WHERE user_id = $1", [userId]);
+
+    // Clear cookies
+    res.clearCookie("accessToken");
+    res.clearCookie("refreshToken");
+
+    res.json({
+      message: "Account deleted successfully",
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Server error" });
+  }
+};
