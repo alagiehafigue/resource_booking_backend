@@ -1,7 +1,6 @@
 import pool from "../config/db.js";
 
-//  Create resource admin only
-
+// Create resource (admin only)
 export const createResource = async (req, res) => {
   try {
     const { role } = req.user;
@@ -34,12 +33,13 @@ export const createResource = async (req, res) => {
           "resource_name, resource_type, location_name, location and capacity are required",
       });
     }
+
     const result = await pool.query(
       `INSERT INTO resources
-  (resource_name, resource_type, availability_status, approval_required,
-   image_url, description, location, location_name, capacity)
-  VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9)
-  RETURNING *`,
+      (resource_name, resource_type, availability_status, approval_required,
+       image_url, description, location, location_name, capacity)
+      VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9)
+      RETURNING *`,
       [
         resource_name,
         resource_type,
@@ -68,15 +68,15 @@ export const getAllResources = async (req, res) => {
   try {
     const result = await pool.query(
       `SELECT 
-          resource_id,
-          resource_name,
-          image_url,
-          description,
-          location_name,
-          location,
-          capacity,
-          availability_status,
-          approval_required
+        resource_id,
+        resource_name,
+        image_url,
+        description,
+        location_name,
+        location,
+        capacity,
+        availability_status,
+        approval_required
        FROM resources
        ORDER BY resource_id DESC`,
     );
@@ -95,15 +95,15 @@ export const getResourceById = async (req, res) => {
 
     const result = await pool.query(
       `SELECT 
-          resource_id,
-          resource_name,
-          image_url,
-          description,
-          location_name,
-          location,
-          capacity,
-          availability_status,
-          approval_required
+        resource_id,
+        resource_name,
+        image_url,
+        description,
+        location_name,
+        location,
+        capacity,
+        availability_status,
+        approval_required
        FROM resources
        WHERE resource_id = $1`,
       [id],
@@ -120,7 +120,7 @@ export const getResourceById = async (req, res) => {
   }
 };
 
-// Delete resource by admin only
+// Delete resource (admin only)
 export const deleteResource = async (req, res) => {
   try {
     const { id } = req.params;
@@ -142,7 +142,7 @@ export const deleteResource = async (req, res) => {
     const activeBookings = await pool.query(
       `SELECT booking_id FROM bookings
        WHERE resource_id = $1
-       AND status IN ('pending', 'confirmed')`,
+       AND status IN ('pending','confirmed')`,
       [id],
     );
 
