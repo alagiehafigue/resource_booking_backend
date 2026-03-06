@@ -161,3 +161,60 @@ export const deleteResource = async (req, res) => {
     res.status(500).json({ message: "Server error" });
   }
 };
+
+export const updateResource = async (req, res) => {
+  try {
+    const { resourceId } = req.params;
+
+    const {
+      name,
+      description,
+      location_name,
+      location,
+      image_url,
+      availability_status,
+      approval_required,
+    } = req.body;
+
+    const existingResource = await pool.query(
+      `SELECT * FROM resources WHERE resource_id = $1`,
+      [resourceId],
+    );
+
+    if (existingResource.rows.length === 0) {
+      return res.status(404).json({ message: "Resource not found" });
+    }
+
+    const updatedResource = await pool.query(
+      `UPDATE resources
+       SET
+        name = COALESCE($1, name),
+        description = COALESCE($2, description),
+        location_name = COALESCE($3, location_name),
+        location = COALESCE($4, location),
+        image_url = COALESCE($5, image_url),
+        availability_status = COALESCE($6, availability_status),
+        approval_required = COALESCE($7, approval_required)
+       WHERE resource_id = $8
+       RETURNING *`,
+      [
+        name,
+        description,
+        location_name,
+        location,
+        image_url,
+        availability_status,
+        approval_required,
+        resourceId,
+      ],
+    );
+
+    res.json({
+      message: "Resource updated successfully",
+      resource: updatedResource.rows[0],
+    });
+  } catch (error) {
+    console.error("Update Resource Error:", error);
+    res.status(500).json({ message: "Server error" });
+  }
+};
