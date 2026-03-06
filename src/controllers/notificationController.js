@@ -1,7 +1,6 @@
 import pool from "../config/db.js";
 
-//  Get my notifications
-
+// Get my notifications
 export const getMyNotifications = async (req, res) => {
   try {
     const userId = req.user.userId;
@@ -25,7 +24,7 @@ export const getMyNotifications = async (req, res) => {
   }
 };
 
-// Mart notification as read
+// Mark notification as read
 export const markNotificationAsRead = async (req, res) => {
   try {
     const { notificationId } = req.params;
@@ -36,15 +35,19 @@ export const markNotificationAsRead = async (req, res) => {
        SET read_status = true
        WHERE notification_id = $1
        AND user_id = $2
-       RETURNING *`,
+       RETURNING notification_id`,
       [notificationId, userId],
     );
 
     if (result.rows.length === 0) {
-      return res.status(404).json({ message: "Notification not found" });
+      return res.status(404).json({
+        message: "Notification not found",
+      });
     }
 
-    res.json({ message: "Notification marked as read" });
+    res.json({
+      message: "Notification marked as read",
+    });
   } catch (error) {
     console.error("Mark Notification Error:", error);
     res.status(500).json({ message: "Server error" });

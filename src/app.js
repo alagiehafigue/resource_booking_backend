@@ -2,7 +2,6 @@ import express from "express";
 import cookieParser from "cookie-parser";
 
 import authRoutes from "./routes/authRoutes.js";
-import { authenticate } from "./middleware/authmiddleware.js";
 import adminRoutes from "./routes/adminRoutes.js";
 import resourceRoutes from "./routes/resourceRoutes.js";
 import bookingRoutes from "./routes/bookingRoutes.js";

@@ -7,7 +7,7 @@ import {
   deleteAccount,
 } from "../controllers/authController.js";
 import { loginLimiter } from "../middleware/rateLimiter.js";
-
+import { authenticate } from "../middleware/authmiddleware.js";
 const router = express.Router();
 
 router.post("/register", registerUser);

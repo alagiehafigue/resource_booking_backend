@@ -19,7 +19,7 @@ export const createResource = async (req, res) => {
       location,
       location_name,
       capacity,
-    } = req.body;
+    } = req.body || {};
 
     if (
       !resource_name ||
