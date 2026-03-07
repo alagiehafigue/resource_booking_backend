@@ -3,7 +3,7 @@ import bcrypt from "bcrypt";
 import pool from "../config/db.js";
 
 const generateAccessToken = (payload) =>
-  jwt.sign(payload, process.env.JWT_SECRET, { expiresIn: "1m" });
+  jwt.sign(payload, process.env.JWT_SECRET, { expiresIn: "20m" });
 
 const generateRefreshToken = (payload) =>
   jwt.sign(payload, process.env.JWT_REFRESH_SECRET, { expiresIn: "7d" });
