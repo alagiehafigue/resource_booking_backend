@@ -36,14 +36,14 @@ app.get("/api/health", (req, res) => {
   res.status(200).json({ status: "OK", message: "Backend is running" });
 });
 
-// To catch generic errors
-app.use(errorHandler);
-
 // To catch for all Not Found Page
 app.use((req, res, next) => {
   const error = new Error(`Not Found - ${req.path}`);
   res.status(404);
   next(error); //
 });
+
+// To catch for all generic error
+app.use(errorHandler);
 
 export default app;
