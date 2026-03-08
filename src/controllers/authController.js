@@ -1,9 +1,12 @@
 import jwt from "jsonwebtoken";
 import bcrypt from "bcrypt";
 import pool from "../config/db.js";
+import dotenv from "dotenv";
+
+dotenv.config();
 
 const generateAccessToken = (payload) =>
-  jwt.sign(payload, process.env.JWT_SECRET, { expiresIn: "20m" });
+  jwt.sign(payload, process.env.JWT_SECRET, { expiresIn: "15m" });
 
 const generateRefreshToken = (payload) =>
   jwt.sign(payload, process.env.JWT_REFRESH_SECRET, { expiresIn: "7d" });
@@ -110,15 +113,15 @@ export const loginUser = async (req, res) => {
     // Cookies
     res.cookie("accessToken", accessToken, {
       httpOnly: true,
-      sameSite: "strict",
-      secure: false, // true in production
+      sameSite: "lax",
+      secure: process.env.NODE_ENV === "production",
       maxAge: 15 * 60 * 1000,
     });
 
     res.cookie("refreshToken", refreshToken, {
       httpOnly: true,
-      sameSite: "strict",
-      secure: false,
+      sameSite: "lax",
+      secure: process.env.NODE_ENV === "production",
       maxAge: 7 * 24 * 60 * 60 * 1000,
     });
     res.status(200).json({ message: "Login successful" });
@@ -172,8 +175,8 @@ export const refreshAccessToken = async (req, res) => {
 
     res.cookie("accessToken", newAccessToken, {
       httpOnly: true,
-      sameSite: "strict",
-      secure: false,
+      sameSite: "lax",
+      secure: process.env.NODE_ENV === "production",
       maxAge: 15 * 60 * 1000,
     });
 
