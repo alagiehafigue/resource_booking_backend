@@ -162,6 +162,7 @@ export const logoutUser = async (req, res) => {
 
 export const refreshAccessToken = async (req, res) => {
   try {
+    const isProd = process.env.NODE_ENV === "production";
     const refreshToken = req.cookies.refreshToken;
 
     if (!refreshToken) {
